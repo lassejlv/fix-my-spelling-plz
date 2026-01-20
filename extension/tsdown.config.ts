@@ -13,4 +13,10 @@ export default defineConfig([
     format: "iife",
     clean: false,
   },
+  {
+    entry: { options: "src/options.ts" },
+    outDir: "dist",
+    format: "iife",
+    clean: false,
+  },
 ]);

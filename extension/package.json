@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsdown && cp manifest.json dist/"
+    "build": "tsdown && cp manifest.json src/options.html dist/"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",

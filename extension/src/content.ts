@@ -1,4 +1,24 @@
-const API_URL = "https://fix-my-spelling-plz.up.railway.app/fix-my-spelling";
+let apiUrl: string | null = null;
+
+// Load API URL from storage
+async function getApiUrl(): Promise<string | null> {
+  if (apiUrl) return apiUrl;
+
+  try {
+    const result = await chrome.storage.sync.get(["apiEndpoint"]);
+    apiUrl = result.apiEndpoint || null;
+    return apiUrl;
+  } catch {
+    return null;
+  }
+}
+
+// Listen for storage changes to update API URL
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.apiEndpoint) {
+    apiUrl = changes.apiEndpoint.newValue;
+  }
+});
 
 type TextInputElement = HTMLInputElement | HTMLTextAreaElement;
 type EditableElement = TextInputElement | HTMLElement;
@@ -493,7 +513,16 @@ async function checkSpelling(): Promise<void> {
   showLoadingPopup();
 
   try {
-    const response = await fetch(API_URL, {
+    const endpoint = await getApiUrl();
+    if (!endpoint) {
+      isLoading = false;
+      showError(
+        "API endpoint not configured. Please set it in extension options.",
+      );
+      return;
+    }
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: originalText }),
