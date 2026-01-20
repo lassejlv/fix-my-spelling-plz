@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Fix My Spelling",
+  "version": "1.0.0",
+  "description": "Fix spelling in text inputs and textareas",
+  "permissions": ["activeTab", "contextMenus"],
+  "background": {
+    "service_worker": "background.iife.js"
+  },
+  "commands": {
+    "fix-spelling": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Fix spelling in the current text field"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.iife.js"]
+    }
+  ]
+}

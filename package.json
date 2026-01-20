@@ -1,0 +1,23 @@
+{
+  "name": "fix-my-spelling-plz",
+  "module": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch .",
+    "build": "bun build --compile --minify . --outfile app",
+    "start": "./app"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
+    "@tanstack/ai": "^0.2.2",
+    "@tanstack/ai-gemini": "^0.3.2",
+    "hono": "^4.11.4",
+    "zod": "^4.3.5"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "fix-my-spelling-extension",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsdown && cp manifest.json dist/"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "tsdown": "^0.20.0-beta.3",
+    "typescript": "^5.9.3"
+  }
+}
