@@ -28,6 +28,7 @@ let popupElement: HTMLDivElement | null = null;
 let originalText = "";
 let correctedText = "";
 let isLoading = false;
+let currentMode: "spelling" | "improve" = "spelling";
 
 function injectStyles(): void {
   if (document.getElementById("fix-spelling-styles")) return;
@@ -104,10 +105,13 @@ function positionPopup(element: EditableElement): void {
   popupElement.style.left = `${left}px`;
 }
 
-function showLoadingPopup(): void {
+function showLoadingPopup(mode: "spelling" | "improve" = "spelling"): void {
   if (!popupElement) {
     popupElement = createPopup();
   }
+
+  const message =
+    mode === "spelling" ? "Checking spelling..." : "Improving writing...";
 
   popupElement.classList.add("loading");
   popupElement.innerHTML = `
@@ -115,7 +119,7 @@ function showLoadingPopup(): void {
       <svg class="fix-spelling-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
         <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
       </svg>
-      <div style="color: #9ca3af; font-size: 13px;">Checking spelling...</div>
+      <div style="color: #9ca3af; font-size: 13px;">${message}</div>
     </div>
   `;
 
@@ -128,20 +132,25 @@ function showLoadingPopup(): void {
   });
 }
 
-function showSuggestionPopup(): void {
+function showSuggestionPopup(mode: "spelling" | "improve" = "spelling"): void {
   if (!popupElement) {
     popupElement = createPopup();
   }
+
+  const title = mode === "spelling" ? "Spelling Fixed" : "Improved Writing";
+  const icon =
+    mode === "spelling"
+      ? `<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>`
+      : `<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/><path d="M15 6l3 3"/>`;
 
   popupElement.classList.remove("loading");
   popupElement.innerHTML = `
     <div style="padding: 16px 20px;">
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2">
-          <path d="M12 20h9"/>
-          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          ${icon}
         </svg>
-        <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Suggestion</div>
+        <div style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${title}</div>
       </div>
       <div style="color: #f3f4f6; font-size: 15px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap;">${escapeHtml(correctedText)}</div>
     </div>
@@ -502,6 +511,7 @@ async function checkSpelling(): Promise<void> {
   if (isLoading) return;
   if (!activeElement) return;
 
+  currentMode = "spelling";
   const { text: textToCheck, hasSelection } = getSelectedText(activeElement);
   savedSelection = { hasSelection };
 
@@ -510,7 +520,7 @@ async function checkSpelling(): Promise<void> {
   originalText = textToCheck;
   isLoading = true;
 
-  showLoadingPopup();
+  showLoadingPopup("spelling");
 
   try {
     const endpoint = await getApiUrl();
@@ -522,7 +532,10 @@ async function checkSpelling(): Promise<void> {
       return;
     }
 
-    const response = await fetch(endpoint, {
+    // Replace the endpoint path for spelling
+    const spellingEndpoint = endpoint.replace(/\/[^\/]*$/, "/fix-my-spelling");
+
+    const response = await fetch(spellingEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: originalText }),
@@ -542,7 +555,65 @@ async function checkSpelling(): Promise<void> {
       return;
     }
 
-    showSuggestionPopup();
+    showSuggestionPopup("spelling");
+  } catch (error) {
+    isLoading = false;
+    showError("Could not connect to API");
+  }
+}
+
+async function improveWriting(): Promise<void> {
+  if (isLoading) return;
+  if (!activeElement) return;
+
+  currentMode = "improve";
+  const { text: textToCheck, hasSelection } = getSelectedText(activeElement);
+  savedSelection = { hasSelection };
+
+  if (!textToCheck.trim()) return;
+
+  originalText = textToCheck;
+  isLoading = true;
+
+  showLoadingPopup("improve");
+
+  try {
+    const endpoint = await getApiUrl();
+    if (!endpoint) {
+      isLoading = false;
+      showError(
+        "API endpoint not configured. Please set it in extension options.",
+      );
+      return;
+    }
+
+    // Replace the endpoint path for improve writing
+    const improveEndpoint = endpoint.replace(
+      /\/[^\/]*$/,
+      "/improve-this-writing",
+    );
+
+    const response = await fetch(improveEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: originalText }),
+    });
+
+    if (!response.ok) {
+      throw new Error("API request failed");
+    }
+
+    const data = await response.json();
+    correctedText = data.improved;
+
+    isLoading = false;
+
+    if (correctedText === originalText) {
+      showNoChanges();
+      return;
+    }
+
+    showSuggestionPopup("improve");
   } catch (error) {
     isLoading = false;
     showError("Could not connect to API");
@@ -590,14 +661,18 @@ async function handleCopy(): Promise<void> {
 
 // Listen for messages from background script (context menu clicks)
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.action === "fixSpelling") {
+  if (message.action === "fixSpelling" || message.action === "improveWriting") {
     // Get the currently focused element
     const focusedElement = document.activeElement;
     const editableElement = findEditableElement(focusedElement);
 
     if (editableElement) {
       activeElement = editableElement;
-      checkSpelling();
+      if (message.action === "fixSpelling") {
+        checkSpelling();
+      } else {
+        improveWriting();
+      }
       sendResponse({ success: true });
     } else {
       sendResponse({ success: false, error: "No editable element focused" });
@@ -663,6 +738,19 @@ document.addEventListener("keydown", (e) => {
     if (editableElement) {
       activeElement = editableElement;
       checkSpelling();
+    }
+  }
+
+  // Cmd+Shift+I (Mac) or Ctrl+Shift+I (Windows/Linux) to trigger improve writing
+  if (e.key === "i" && e.shiftKey && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+
+    const focusedElement = document.activeElement;
+    const editableElement = findEditableElement(focusedElement);
+
+    if (editableElement) {
+      activeElement = editableElement;
+      improveWriting();
     }
   }
 });

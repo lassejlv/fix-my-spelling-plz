@@ -34,4 +34,29 @@ app.post(
   },
 );
 
+const improveWritingSchema = z.object({
+  text: z.string().min(1),
+});
+
+app.post(
+  "/improve-this-writing",
+  zValidator("json", improveWritingSchema),
+  async (c) => {
+    const { text } = c.req.valid("json");
+
+    const result = await chat({
+      adapter: geminiText("gemini-3-flash-preview"),
+      messages: [
+        {
+          role: "user",
+          content: `Improve the following text to make it clearer, more concise, and more professional. Maintain the original meaning and tone. Only return the improved text, nothing else:\n\n${text}`,
+        },
+      ],
+      stream: false,
+    });
+
+    return c.json({ improved: result });
+  },
+);
+
 export default app;

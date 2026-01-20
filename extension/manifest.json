@@ -18,6 +18,13 @@
         "mac": "Command+Shift+F"
       },
       "description": "Fix spelling in the current text field"
+    },
+    "improve-writing": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+I",
+        "mac": "Command+Shift+I"
+      },
+      "description": "Improve writing in the current text field"
     }
   },
   "content_scripts": [
