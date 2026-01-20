@@ -223,12 +223,12 @@
                     <input
                         type="url"
                         id="apiEndpoint"
-                        placeholder="https://your-api.example.com/fix-my-spelling"
+                        placeholder="https://your-api.example.com"
                         required
                     />
                     <p class="hint">
-                        Required. The URL of your self-hosted spelling
-                        correction API
+                        Required. The base URL of your self-hosted API (without
+                        trailing slash)
                     </p>
                 </div>
 
@@ -246,11 +246,17 @@
 
             <div class="info-box">
                 <h3>API Requirements</h3>
-                <p>
-                    Your API endpoint should accept POST requests with a JSON
-                    body containing
-                    <code>{ "text": "..." }</code> and return
+                <p>Your API should have the following endpoints:</p>
+                <p style="margin-top: 8px">
+                    <code>POST /fix-my-spelling</code> - Returns
                     <code>{ "corrected": "..." }</code>
+                </p>
+                <p style="margin-top: 4px">
+                    <code>POST /improve-this-writing</code> - Returns
+                    <code>{ "improved": "..." }</code>
+                </p>
+                <p style="margin-top: 8px">
+                    Both accept <code>{ "text": "..." }</code> as request body.
                 </p>
             </div>
         </div>

@@ -532,8 +532,9 @@ async function checkSpelling(): Promise<void> {
       return;
     }
 
-    // Replace the endpoint path for spelling
-    const spellingEndpoint = endpoint.replace(/\/[^\/]*$/, "/fix-my-spelling");
+    // Construct the spelling endpoint URL
+    const baseUrl = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+    const spellingEndpoint = `${baseUrl}/fix-my-spelling`;
 
     const response = await fetch(spellingEndpoint, {
       method: "POST",
@@ -587,11 +588,9 @@ async function improveWriting(): Promise<void> {
       return;
     }
 
-    // Replace the endpoint path for improve writing
-    const improveEndpoint = endpoint.replace(
-      /\/[^\/]*$/,
-      "/improve-this-writing",
-    );
+    // Construct the improve writing endpoint URL
+    const baseUrl = endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+    const improveEndpoint = `${baseUrl}/improve-this-writing`;
 
     const response = await fetch(improveEndpoint, {
       method: "POST",
